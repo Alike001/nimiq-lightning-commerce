@@ -1,4 +1,5 @@
 import {init,getHostNetwork,NimiqProviderError} from '@nimiq/mini-app-sdk';
+import {assessReadiness} from './readiness.mjs';
 import './style.css';
 const $=id=>document.getElementById(id);
 let cfg=null, products=[], selected=null,wallet=null,working=false;
@@ -18,7 +19,14 @@ function orderToken(){return selected?selected.token:null}
 async function refresh(){if(!selected)return;const result=await call(`/api/orders/${encodeURIComponent(selected.id)}`,{token:orderToken()});selected.details=result;renderOrder();renderHistory();return result}
 function renderCatalog(){const target=$('catalog');target.replaceChildren();for(const p of products){const box=el('article','product');const art=el('div','productArt');art.append(el('span','miniTag',p.category),el('div','preview','↯'));const body=el('div','productBody');body.append(el('h3','',p.name),el('p','',p.description));const inc=el('ul','includes');for(const line of p.includes||[])inc.append(el('li','',line));body.append(inc);const foot=el('div','buyRow');const left=el('div','price',`${p.amount} ${p.currency}`);left.append(el('small','', 'Fixed pilot price'));const btn=el('button','btn primary',cfg?.ordersEnabled?'Create order':'Orders paused');btn.disabled=!cfg?.ordersEnabled||working;btn.addEventListener('click',()=>createOrder(p.sku));foot.append(left,btn);body.append(foot);box.append(art,body);target.append(box)}}
 function renderHistory(){const div=$('history');div.replaceChildren();if(!saved.length){div.append(el('p','muted','No orders on this device yet.'));return;}for(const s of saved){const line=el('div','histRow');const left=el('div');left.append(el('strong','',s.label||'Lightning order'),el('div','meta',s.id));const b=el('button','btn secondary',selected?.id===s.id?'Viewing':'View order');b.disabled=working;b.addEventListener('click',async()=>{selected=s;renderOrder();try{await refresh();toast('Merchant status refreshed.')}catch(e){toast(`Could not refresh: ${e.message}`)}});line.append(left,b);div.append(line)}}
-function renderOrder(){const d=selected?.details;$('orderPanel').hidden=!selected;if(!selected)return;
+function renderReadiness(){
+ const report=assessReadiness({hostNetwork:wallet?.network,providerAvailable:!!wallet?.provider,
+  lightningMethodExposed:typeof wallet?.provider?.payLightningInvoice==='function',
+  previewOnly:cfg?.previewOnly!==false,walletEnabled:cfg?.walletEnabled===true,order:selected?.details});
+ for(const [id,key] of [['readyNetwork','network'],['readyMethod','method'],['readyInvoice','invoice'],
+  ['readySettlement','settlement'],['readyCheckout','checkout']]) $(id).textContent=report[key];
+}
+function renderOrder(){const d=selected?.details;$('orderPanel').hidden=!selected;renderReadiness();if(!selected)return;
  $('orderRef').textContent=selected.id;$('orderProduct').textContent=d?.name||selected.label||'Checking…';$('orderMerchant').textContent=d?.merchantStatus||'Checking…';$('attempt').textContent=d?.attemptStatus||'No attempt';$('error').textContent=d?.attemptType?`${d.attemptType}${d.attemptCode!=null?` (${d.attemptCode})`:''}`:'None';
  const ready=d?.fulfilled===true;$('statePill').textContent=ready?'PURCHASE READY':(d?.state||'VERIFYING').toUpperCase();$('statePill').style.background=ready?'#d4f5b0':'#dce7da';
  $('orderMessage').textContent=ready?'Merchant-verified Lightning settlement. Your file is available below.':d?.attemptStatus?'A wallet attempt is recorded. Do not retry this invoice. Check merchant settlement and wallet history.':'No payment has been confirmed. Delivery remains locked.';

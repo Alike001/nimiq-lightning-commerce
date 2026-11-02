@@ -1,0 +1,24 @@
+{
+  "name": "nimiq-lightning-commerce-pilot",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build": "vite build",
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "serve": "node --env-file=../../labs/lightning-btcpay-bridge/.env.local server.mjs",
+    "merchant:orders": "node merchant.mjs orders",
+    "merchant:summary": "node merchant.mjs summary"
+  },
+  "dependencies": {
+    "@nimiq/mini-app-sdk": "^0.2.4",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "vite": "^7.1.0"
+  }
+}

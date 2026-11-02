@@ -1,0 +1,17 @@
+import {test} from 'node:test';import {strict as assert} from 'node:assert';
+import {settlementGate,lightningInvoice,validRecovery,cleanError} from '../rules.mjs';
+import {CATALOG} from '../catalog.mjs';
+const prod=CATALOG[0],order={id:'NLC-test'};
+const inv=(status='New',additionalStatus='None')=>({status,additionalStatus,amount:prod.amount,currency:prod.currency,metadata:{orderId:order.id}});
+const methods=(paid='0')=>[{paymentMethodId:'BTC-LN',activated:true,paymentMethodPaid:paid,paymentLink:'lntb100n1asdf'}];
+for(const status of ['New','Expired','Processing','Invalid'])test(`deny ${status}`,()=>assert.equal(settlementGate(inv(status),methods('0.000004'),order,prod).ok,false));
+test('deny settled zero Lightning paid',()=>assert.equal(settlementGate(inv('Settled'),methods(),order,prod).ok,false));
+test('deny settled onchain only',()=>assert.equal(settlementGate(inv('Settled'),[{paymentMethodId:'BTC-CHAIN',activated:true,paymentMethodPaid:'1'}],order,prod).ok,false));
+test('deny mixed rails even if invoice status is settled',()=>assert.equal(settlementGate(inv('Settled'),[...methods('0.000001'),{paymentMethodId:'BTC-CHAIN',activated:true,paymentMethodPaid:'0.000003'}],order,prod).ok,false));
+test('deny wrong amount',()=>assert.equal(settlementGate({...inv('Settled'),amount:'0.01'},methods('1'),order,prod).ok,false));
+test('deny wrong order id',()=>assert.equal(settlementGate({...inv('Settled'),metadata:{orderId:'wrong'}},methods('1'),order,prod).ok,false));
+test('deny paid late',()=>assert.equal(settlementGate(inv('Settled','PaidLate'),methods('1'),order,prod).ok,false));
+test('only authenticated merchant-side settled Lightning status qualifies',()=>assert.equal(settlementGate(inv('Settled'),methods('0.000004'),order,prod).ok,true));
+test('reject mismatched invoice network',()=>{assert.equal(lightningInvoice(methods(),'mainnet'),null);assert.equal(lightningInvoice(methods(),'testnet'),'lntb100n1asdf')});
+test('recovery code format',()=>{assert.equal(validRecovery(`NLC-${'a'.repeat(8)}-${'a'.repeat(4)}-${'a'.repeat(4)}-${'a'.repeat(4)}-${'a'.repeat(12)}.${'c'.repeat(64)}`),true);assert.equal(validRecovery('12345'),false)});
+test('sanitize error codes',()=>assert.deepEqual(cleanError({type:'BAD <script>',code:12}),{type:'BAD',code:12}));

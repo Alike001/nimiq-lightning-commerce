@@ -1,0 +1,14 @@
+node_modules/
+dist/
+data/
+data-*-backup/
+*.sqlite*
+*.db
+*.db-*
+.env*
+!.env.example
+*.log
+*.pem
+*.key
+*backup
+*.backup

@@ -1,0 +1,5 @@
+import {test} from 'node:test';import {strict as assert} from 'node:assert';import {createHmac} from 'node:crypto';
+import {verifyBtcpaySignature,validateBtcpayEvent,validateAttemptReport} from '../guards.mjs';
+test('signed raw delivery authenticates; altered bytes fail',()=>{const secret='test-only';const b=Buffer.from('{"type":"InvoiceCreated"}');const sig='sha256='+createHmac('sha256',secret).update(b).digest('hex');assert.equal(verifyBtcpaySignature(b,sig,secret),true);assert.equal(verifyBtcpaySignature(Buffer.from('{}'),sig,secret),false);assert.equal(verifyBtcpaySignature(b,null,secret),false)});
+test('wrong merchant store rejected',()=>{const p={storeId:'my-store',invoiceId:'abc1234',deliveryId:'abc1234',type:'InvoiceSettled'};assert.equal(validateBtcpayEvent(p,'my-store'),true);assert.equal(validateBtcpayEvent(p,'another'),false)});
+test('unknown wallet outcome report is allowed but locked',()=>{assert.equal(validateAttemptReport({phase:'result',outcome:'UNKNOWN',errorType:'INVALID_TRANSACTION',errorCode:-32000}),true)})

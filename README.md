@@ -1,4 +1,47 @@
-# LightningCommerce · Storefront Pilot v0.3
+# Nimlane — Nimiq Pay / Bitcoin Lightning merchant commerce
+
+**Status: public no-spend preview, not a launched payment service.**
+
+Public preview: https://nimlane-preview.onrender.com
+
+## What works in the Neon-backed public preview
+
+- Hosted storefront that opens in a browser and inside Nimiq Pay.
+- Unpaid Blink merchant invoice generation and server-side order records in Neon PostgreSQL.
+- Private order recovery across devices; only SHA-256 hashes of recovery tokens are stored in PostgreSQL.
+- Read-only invoice status; delivery never unlocks in this preview.
+- `/api/health` and `/api/config` endpoints to verify its status.
+
+The cloud server **unconditionally forbids wallet payments and downloads**. Its
+`network: mainnet` configuration refers to the *Bitcoin Lightning invoice network*,
+not the active Nimiq Pay wallet. Nimiq Pay may separately show `testnet`. The
+preview UI intentionally says `PREVIEW · NO PAYMENTS` to avoid this ambiguity.
+
+## Start the cloud preview locally
+
+```sh
+npm ci
+npm test
+npm run build
+# Create a private .env.neon.local with DATABASE_URL and other preview settings.
+# Never commit it, print the connection string, or enable payment flags.
+node --env-file=.env.neon.local neon-preview-server.mjs
+```
+
+Production hosting uses the same `neon-preview-server.mjs` with `HOST=0.0.0.0`
+and Render's injected `PORT`. The current public preview has unpaid order
+creation enabled; wallet execution and fulfillment are disabled. A GitHub push
+does not automatically redeploy Render while its auto-deploy setting is off.
+
+## Still to prove before any live launch
+
+A real user-approved NIM → Bitcoin Lightning swap, an independently verified
+merchant settlement, reliable automatic fulfillment, abuse/security review,
+merchant onboarding and usable customer support. Nimiq support previously
+reported Lightning payments unavailable on NIM testnet; that does **not** prove
+the mainnet swap path works. Do not enable live payments to work around this.
+
+## Earlier SQLite / BTCPay pilot (historical v0.3 documentation)
 
 A single-merchant **Nimiq Pay Mini App** research-to-product iteration. A customer purchases a real, original digital resource from a Bitcoin Lightning merchant using a Nimiq Pay wallet. The merchant receives BTC over Lightning *if* the external swap succeeds. Our backend independently checks BTCPay settlement before releasing the resource.
 

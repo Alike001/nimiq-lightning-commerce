@@ -17,6 +17,18 @@ The cloud server **unconditionally forbids wallet payments and downloads**. Its
 not the active Nimiq Pay wallet. Nimiq Pay may separately show `testnet`. The
 preview UI intentionally says `PREVIEW · NO PAYMENTS` to avoid this ambiguity.
 
+## Mainnet readiness panel (v0.8)
+
+The public preview now displays a **read-only mainnet payment readiness report**. It
+uses the Nimiq Pay host network and the existing provider method's presence; it
+never calls `payLightningInvoice`, requests accounts, signs, swaps, or initiates
+payments. The panel differentiates a merchant invoice from a successful Lightning
+settlement. No diagnostic is authorization to enable payments or downloads.
+
+The SDK method being exposed is **not** evidence that Fastspot can quote or route
+NIM to Lightning at the current amount. A real mainnet merchant settlement has
+not yet been verified. Do not publicly advertise a working commerce route.
+
 ## Start the cloud preview locally
 
 ```sh
